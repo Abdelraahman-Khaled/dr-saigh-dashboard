@@ -1,0 +1,193 @@
+/* Quill styling overrides */
+
+/* Wrapper */
+.rich-text-editor-wrapper {
+  position: relative;
+  z-index: 10;
+  overflow: visible;
+}
+
+.quill-wrapper {
+  background-color: white;
+  border-radius: 0.5rem;
+}
+
+.dark .quill-wrapper {
+  background-color: #1f2937; /* gray-800 */
+}
+
+/* Toolbar customization */
+.ql-toolbar.ql-snow {
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+  border-color: #d1d5db !important; /* gray-300 */
+  background-color: #f9fafb; /* gray-50 */
+  font-family: inherit;
+}
+
+.dark .ql-toolbar.ql-snow {
+  border-color: #374151 !important; /* gray-700 */
+  background-color: #1f2937; /* gray-800 */
+}
+
+/* Dark mode toolbar icons */
+.dark .ql-snow .ql-stroke {
+  stroke: #e5e7eb; /* gray-200 */
+}
+
+.dark .ql-snow .ql-fill {
+  fill: #e5e7eb;
+}
+
+.dark .ql-snow .ql-picker {
+  color: #e5e7eb;
+}
+
+.dark .ql-snow .ql-picker-options {
+  background-color: #1f2937;
+  border-color: #374151;
+}
+
+/* Hover states for icons */
+.dark .ql-snow .ql-picker-label:hover,
+.dark .ql-snow .ql-picker-label.ql-active,
+.dark .ql-snow .ql-picker-item:hover,
+.dark .ql-snow .ql-picker-item.ql-selected {
+  color: #60a5fa !important; /* blue-400 */
+}
+
+.dark .ql-snow .ql-stroke:hover,
+.dark .ql-snow .ql-stroke.ql-active {
+    stroke: #60a5fa !important;
+}
+
+.dark .ql-snow .ql-fill:hover,
+.dark .ql-snow .ql-fill.ql-active {
+    fill: #60a5fa !important;
+}
+
+/* Container customization */
+.ql-container.ql-snow {
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+  border-color: #d1d5db !important;
+  background-color: white;
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.dark .ql-container.ql-snow {
+  border-color: #374151 !important;
+  background-color: #111827; /* gray-900 */
+  color: white;
+}
+
+/* Editor content area */
+.ql-editor {
+  min-height: var(--editor-min-height, 300px);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  line-height: 1.6; /* Increased line-height for Arabic dots/diacritics */
+}
+
+.ql-editor.ql-blank::before {
+  color: #9ca3af; /* gray-400 placeholder */
+  font-style: normal;
+  left: 15px;
+}
+
+.dark .ql-editor.ql-blank::before {
+  color: #6b7280; /* gray-500 */
+}
+
+/* RTL Support */
+.rtl-editor .ql-editor {
+  text-align: right;
+  direction: rtl;
+}
+
+/* RTL List specifics to prevent dot clipping and ensure alignment */
+.rtl-editor .ql-editor li {
+    padding-right: 1.5em; /* Space for bullet on the right */
+    padding-left: 0;
+    text-align: right;
+    overflow: visible; /* Ensure dots/diacritics aren't clipped */
+}
+
+.rtl-editor .ql-editor li::before {
+    margin-right: -1.5em;
+    margin-left: 0.3em;
+    text-align: left;
+}
+.rtl-editor .ql-editor .ql-ui {
+  right: 0px;
+}
+.rtl-editor .ql-editor.ql-blank::before {
+    right: 15px;
+    left: auto;
+    text-align: right;
+}
+
+/* Improve header sizes */
+.ql-snow .ql-editor h1 {
+    font-size: 2em;
+    font-weight: bold;
+    margin-bottom: 0.5em;
+}
+.ql-snow .ql-editor h2 {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin-bottom: 0.5em;
+}
+.ql-snow .ql-editor h3 {
+    font-size: 1.17em;
+    font-weight: bold;
+    margin-bottom: 0.5em;
+}
+
+/* Dark mode dropdown text fixes */
+.dark .ql-picker-options {
+    background-color: #1f2937 !important;
+    color: white !important;
+    border-color: #4b5563 !important;
+}
+
+/* Utility to ensure dropdowns are visible */
+.ql-picker.ql-expanded .ql-picker-options {
+    z-index: 9999 !important;
+}
+
+/* Ensure all content wraps properly - prevents overflow */
+.ql-editor p,
+.ql-editor div,
+.ql-editor span,
+.ql-editor li {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+}
+
+/* Apply same rules to preview and displayed content */
+.prose {
+    line-height: 1.6;
+}
+
+.prose p,
+.prose div,
+.prose span,
+.prose li {
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+  white-space: normal !important;
+}
+
+/* RTL Prose List fixes */
+[dir="rtl"] .prose li {
+    padding-right: 1.5em;
+    padding-left: 0;
+    text-align: right;
+    overflow: visible;
+}
