@@ -330,7 +330,7 @@ class OperationsPage extends Component<
       isModalOpen,
       editingId,
       viewLanguage,
-      formCategory,
+    //   formCategory,
       formSlug,
       formSlugAr,
       formTitleEn,
