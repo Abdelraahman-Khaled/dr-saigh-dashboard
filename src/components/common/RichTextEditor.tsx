@@ -80,6 +80,18 @@ const shouldShowTextMenu = ({ editor, from, to }: { editor: Editor; from: number
   from !== to && isTextSelection(editor.state.selection) && !editor.isActive("table");
 const shouldShowTableMenu = ({ editor }: { editor: Editor }) => editor.isActive("table");
 
+// Word / Google Docs pastes carry inline colors and fonts that would end up in the stored HTML.
+const PASTED_STYLE_PROPS = ["color", "background-color", "font-family", "font-size"];
+const stripPastedStyles = (html: string): string => {
+  if (typeof DOMParser === "undefined" || !html.includes("style=")) return html;
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  doc.querySelectorAll<HTMLElement>("[style]").forEach((el) => {
+    PASTED_STYLE_PROPS.forEach((prop) => el.style.removeProperty(prop));
+    if (!el.getAttribute("style")?.trim()) el.removeAttribute("style");
+  });
+  return doc.body.innerHTML;
+};
+
 // Same cleanup the old Quill editor applied to saved HTML.
 const cleanHtml = (html: string): string =>
   html ? html.replace(/&nbsp;/g, " ").replace(/\u00A0/g, " ") : html;
@@ -89,7 +101,7 @@ const ALIGN_RE = /\bql-align-(left|center|right|justify)\b/;
 // Content saved by the old Quill editor uses ql-* classes that TipTap ignores.
 // Convert what we can so alignment and bullet lists survive the first edit.
 const normalizeLegacyHtml = (html: string): string => {
-  if (!html || (!html.includes("ql-") && !html.includes("data-list"))) return html;
+  if (!html || typeof DOMParser === "undefined" || (!html.includes("ql-") && !html.includes("data-list"))) return html;
   const doc = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html");
   doc.querySelectorAll(".ql-ui").forEach((el) => el.remove());
   doc.querySelectorAll<HTMLElement>('[class*="ql-align-"]').forEach((el) => {
@@ -121,15 +133,15 @@ const normalizeLegacyHtml = (html: string): string => {
   return doc.body.innerHTML;
 };
 
-// Accepts normal YouTube / Vimeo links as well as embed URLs.
+// YouTube / Vimeo only: accepts normal links as well as embed URLs.
 const toEmbedUrl = (url: string): string | null => {
   const value = url.trim();
   if (!/^https?:\/\//i.test(value)) return null;
-  const yt = value.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/);
+  const yt = value.match(/(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/);
   if (yt) return `https://www.youtube.com/embed/${yt[1]}`;
   const vimeo = value.match(/vimeo\.com\/(?:video\/)?(\d+)/);
   if (vimeo) return `https://player.vimeo.com/video/${vimeo[1]}`;
-  return value;
+  return null;
 };
 
 // Video embed compatible with Quill's <iframe class="ql-video"> markup.
@@ -146,8 +158,11 @@ const VideoEmbed = Node.create({
       {
         tag: "iframe[src]",
         getAttrs: (el) => {
-          const src = (el as HTMLElement).getAttribute("src") || "";
-          return /^https?:\/\//i.test(src) ? { src } : false;
+          const node = el as HTMLElement;
+          const src = node.getAttribute("src") || "";
+          if (!/^https?:\/\//i.test(src)) return false;
+          // Old Quill videos keep their src; any other iframe must be a YouTube / Vimeo embed
+          return node.classList.contains("ql-video") || toEmbedUrl(src) ? { src } : false;
         },
       },
     ];
@@ -185,11 +200,11 @@ const useSharedActions = (editor: any) => {
   }, [editor]);
 
   const addVideo = useCallback(() => {
-    const url = window.prompt("Enter Video URL (YouTube / Vimeo / embed link)");
+    const url = window.prompt("Enter a YouTube or Vimeo URL");
     if (!url) return;
     const src = toEmbedUrl(url);
     if (!src) {
-      window.alert("Please enter a valid http(s) URL");
+      window.alert("Only YouTube and Vimeo links are supported");
       return;
     }
     editor.chain().focus().insertContent({ type: "video", attrs: { src } }).run();
@@ -381,7 +396,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
           <Code size={16} />
         </button>
         <button type="button"
-          onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
+          onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().unsetTextAlign().run()}
           className="tiptap-toolbar-button flex items-center justify-center w-8 h-8 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400"
           title="Clear Formatting"
         >
@@ -495,7 +510,7 @@ const RichTextEditor = forwardRef<any, RichTextEditorProps>((props, ref) => {
   const [showPreview, setShowPreview] = useState(false);
 
   const getInitialContent = useCallback(() => {
-    if (localStorageKey) {
+    if (localStorageKey && typeof window !== "undefined") {
       const saved = localStorage.getItem(localStorageKey);
       if (saved) {
         if (!saved.trim().startsWith("{")) {
@@ -524,9 +539,6 @@ const RichTextEditor = forwardRef<any, RichTextEditorProps>((props, ref) => {
       Underline,
       Link.configure({
         openOnClick: false,
-        HTMLAttributes: {
-          class: "cursor-pointer text-blue-600 underline",
-        },
       }),
       Image,
       VideoEmbed,
@@ -564,7 +576,7 @@ const RichTextEditor = forwardRef<any, RichTextEditorProps>((props, ref) => {
       // Clean up pasted HTML to prevent unwanted bolding from some sources (like MS Word/Google Docs)
       transformPastedHTML(html) {
         return (
-          html
+          stripPastedStyles(html)
             .replace(/font-weight:\s*bold/g, "")
             .replace(/font-weight:\s*700/g, "")
             .replace(/font-weight:\s*800/g, "")
